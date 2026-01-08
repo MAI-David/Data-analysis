@@ -3,15 +3,43 @@
 ## UML activity diagram
 
 ```mermaid
-flowchart TD
-    A[Load CSV data] --> B[Transpose abundance table]
-    B --> C[Merge with metadata]
-    C --> D[Drop unused columns]
-    D --> E[Encode categorical fields]
-    E --> F[Missing value check]
-    E --> G[Outlier detection]
-    E --> H[Normality check]
-    H --> I[Exploratory analysis & PCA]
+---
+config:
+  layout: elk
+  look: neo
+  theme: default
+---
+flowchart TB
+    n1["Data"] --> n3["Merged DataFrame"]
+    n2["Metadata"] --> n3
+    n3 --> n4["Preprocessing"] & n6@{ label: "<span style=\"padding-left:\" data-darkreader-inline-color=\"\">Year of Birth<br>Body Product</span>" } & n7["Exploratory Data Analysis"]
+    n6 --> n5["Drop unused columns"]
+    n4 --> n8["LabelEncoding"]
+    n9["Family ID<br>Sex<br>Age group"] --> n8
+    n8 --> n10["Missingness check"]
+    n11["Rows with NaN Age Group"] --> n12["Drop unknown samples"]
+    n10 --> n11 & n13["Outlier check"]
+    n13 --> n14["Summary"] & n15["Normalisation check"]
+    n15 --> n16["Summary"]
+    n7 --> n17["Shape measure"]
+    n17 --> n18["Samples per child"]
+    n18 --> n19["Samples per age group"]
+    n19 --> n20["Bacterial abundance"]
+    n20 --> n21["Feature analysis"]
+
+    n1@{ shape: db}
+    n2@{ shape: db}
+    n6@{ shape: manual-input}
+    n5@{ shape: event}
+    n9@{ shape: manual-input}
+    n11@{ shape: display}
+    n14@{ shape: summary}
+    n16@{ shape: summary}
+     n1:::Aqua
+     n2:::Aqua
+    classDef Aqua stroke-width:1px, stroke-dasharray:none, stroke:#46EDC8, fill:#DEFFF8, color:#378E7A
+    style n1 color:#000000
+    style n2 color:#000000
 ```
 
 ## Important variables and objects
