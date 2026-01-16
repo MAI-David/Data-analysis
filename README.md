@@ -1,6 +1,100 @@
-# Documentation
+# Data Analysis - Microbiome Study
 
-## UML activity diagram
+## Overview
+
+This repository contains a data analysis pipeline for studying microbiome data from the LUCKI cohort. The analysis focuses on bacterial abundance patterns across different age groups and samples, using MetaPhlAn 4.1.1 taxonomic profiles.
+
+### Key Features
+
+- **Data Integration**: Merges abundance tables with sample metadata
+- **Preprocessing Pipeline**: Handles missing data, outliers, and normalization
+- **Exploratory Analysis**: Visualizes sample distributions and bacterial abundance patterns
+- **Machine Learning**: Implements Random Forest models for predictive analysis
+- **Feature Engineering**: Performs PCA and feature selection on taxonomic data
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.x
+- Jupyter Notebook
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/MAI-David/Data-analysis.git
+cd Data-analysis
+```
+
+2. Install required packages:
+```bash
+cd notebooks
+pip install -r requirements.txt
+```
+
+### Dependencies
+
+The project requires the following Python packages:
+- pandas
+- numpy
+- matplotlib
+- seaborn
+- scikit-learn
+- click
+- colorama
+- supertree
+
+## Usage
+
+The main analysis is contained in the Jupyter notebook:
+
+```bash
+cd notebooks
+jupyter notebook data-pipeline.ipynb
+```
+
+The notebook is organized into the following sections:
+1. **Housekeeping**: Library imports and settings
+2. **Data Preprocessing**: Merging, encoding, and cleaning data
+3. **Exploratory Data Analysis**: Visualizations and statistical summaries
+4. **Model Training**: Machine learning model development
+
+## Data
+
+The analysis uses two main data sources located in `data/raw/`:
+
+- **MAI3004_lucki_mpa411.csv**: MetaPhlAn 4.1.1 abundance table (6903 × 932)
+  - Contains taxonomic profiles with relative abundances for each sample
+  - Each row represents a taxonomic clade
+  - Columns are prefixed with `mpa411_` for sample identifiers
+
+- **MAI3004_lucki_metadata_safe.csv**: Sample metadata (930 × 6)
+  - Contains demographic and sample information
+  - Includes family ID, sex, age group, and collection details
+
+For more information about the MetaPhlAn data format, see `data/raw/metaphlan411_data_description.md`.
+
+## Project Structure
+
+```
+Data-analysis/
+├── README.md                 # This file
+├── data/
+│   └── raw/                  # Raw data files
+│       ├── MAI3004_lucki_mpa411.csv
+│       ├── MAI3004_lucki_metadata_safe.csv
+│       └── metaphlan411_data_description.md
+└── notebooks/
+    ├── data-pipeline.ipynb   # Main analysis notebook
+    └── requirements.txt      # Python dependencies
+```
+
+## Documentation
+
+### Workflow Diagram
+
+The following diagram illustrates the complete data processing and analysis workflow:
 
 ```mermaid
 ---
@@ -42,7 +136,9 @@ flowchart TB
     style n2 color:#000000
 ```
 
-## Important variables and objects
+### Key Variables and Objects
+
+The following table describes important variables and data structures used throughout the analysis:
 
 | Name                                         | Purpose                                                                                                                                                                                        |
 |----------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -58,3 +154,41 @@ flowchart TB
 | `normalized_samples`                         | Copy used for Shapiro-Wilk normality checks across `numeric_cols`.                                                                                                                             |
 | `X`, `feature_cols`                          | Feature matrix derived from `merged_samples` after removing metadata columns; drives prevalence and PCA analysis.                                                                              |
 | `top_features`, `X_sub`, `X_scaled`, `X_pca` | PCA prep artifacts: top 500 prevalent features, their subset matrix, scaled values, and resulting 2D projection.                                                                               |
+
+## Analysis Workflow
+
+The data pipeline follows these main steps:
+
+1. **Data Loading**: Import raw abundance data and metadata
+2. **Data Merging**: Combine abundance profiles with sample metadata
+3. **Preprocessing**:
+   - Label encoding for categorical variables (family_id, sex, age_group)
+   - Handle missing values
+   - Detect and analyze outliers using IQR method
+   - Check normality assumptions
+4. **Train-Test Split**: Separate data before further processing
+5. **Normalization**: Apply log transformation to abundance data
+6. **Exploratory Analysis**:
+   - Analyze sample distributions
+   - Examine bacterial abundance patterns
+   - Perform PCA for dimensionality reduction
+7. **Feature Selection**: Filter features at specific taxonomic levels (e.g., genus)
+8. **Model Training**: Train Random Forest models with hyperparameter tuning
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is part of academic research. Please contact the repository owner for licensing information.
+
+## Acknowledgments
+
+- Data from the LUCKI cohort study
+- MetaPhlAn 4.1.1 for taxonomic profiling
+- Related publication: Lucki cohort description (2015) - s12889-015-2255-7
+
+## Contact
+
+For questions or collaborations, please open an issue in this repository.
