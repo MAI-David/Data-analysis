@@ -174,21 +174,3 @@ The data pipeline follows these main steps:
    - Perform PCA for dimensionality reduction
 7. **Feature Selection**: Filter features at specific taxonomic levels (e.g., genus)
 8. **Model Training**: Train Random Forest models with hyperparameter tuning
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is part of academic research. Please contact the repository owner for licensing information.
-
-## Acknowledgments
-
-- Data from the LUCKI cohort study
-- MetaPhlAn 4.1.1 for taxonomic profiling
-- Related publication: LUCKI cohort description (2015) - s12889-015-2255-7
-
-## Contact
-
-For questions or collaborations, please open an issue in this repository.
