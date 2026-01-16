@@ -187,7 +187,7 @@ This project is part of academic research. Please contact the repository owner f
 
 - Data from the LUCKI cohort study
 - MetaPhlAn 4.1.1 for taxonomic profiling
-- Related publication: Lucki cohort description (2015) - s12889-015-2255-7
+- Related publication: LUCKI cohort description (2015) - s12889-015-2255-7
 
 ## Contact
 
