@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains a data analysis pipeline for studying microbiome data from the LUCKI cohort. The analysis focuses on bacterial abundance patterns across different age groups and samples, using MetaPhlAn 4.1.1 taxonomic profiles.
+This repository contains a data analysis pipeline for studying microbiome data from the LucKi cohort. The analysis focuses on bacterial abundance patterns across different age groups and samples, using MetaPhlAn 4.1.1 taxonomic profiles.
 
 ### Key Features
 
