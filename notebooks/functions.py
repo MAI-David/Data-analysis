@@ -58,7 +58,7 @@ def nn_feature_search(X_train, X_test, Y_train, target_range=(50, 1250)):
     X_train_scaled = scaler.fit_transform(X_train)
     X_train_tf = X_train_scaled.astype('float32')
     y_train_tf = Y_train.values.astype('float32')
-    penalties = [2.5, 3.0, 4.0, 5.0, 6.0, 7.0]
+    penalties = [3.0, 4.0, 5.0, 6.0, 7.0]
     repeats = 10
     champion = {'rmse': float('inf'), 'weights': None, 'n_features': 0, 'penalty': 0}
 
