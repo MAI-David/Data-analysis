@@ -44,7 +44,7 @@ class GatekeeperLayer(layers.Layer):
     def build(self, input_shape):
         self.w = self.add_weight(
             shape=(self.num_features,),
-            initializer=initializers.RandomUniform(minval=0.0, maxval=0.05),
+            initializer=initializers.HeNormal(),
             trainable=True,
             constraint=constraints.NonNeg(),
             regularizer=regularizers.l1(self.l1_penalty)
@@ -58,8 +58,8 @@ def nn_feature_search(X_train, X_test, Y_train, target_range=(50, 1250)):
     X_train_scaled = scaler.fit_transform(X_train)
     X_train_tf = X_train_scaled.astype('float32')
     y_train_tf = Y_train.values.astype('float32')
-    penalties = [3.0, 4.0, 5.0, 6.0, 7.0]
-    repeats = 10
+    penalties = [3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+    repeats = 7
     champion = {'rmse': float('inf'), 'weights': None, 'n_features': 0, 'penalty': 0}
 
     print(f"🔬 Starting NN Sparsity Search on {X_train.shape[1]} features...")
@@ -74,7 +74,7 @@ def nn_feature_search(X_train, X_test, Y_train, target_range=(50, 1250)):
             x = layers.Dense(32, activation='relu')(gate)
             outputs = layers.Dense(1, activation='linear')(x)
             model = models.Model(inputs=inputs, outputs=outputs)
-            model.compile(optimizer=tf.keras.optimizers.Adam(0.001), loss='mse')
+            model.compile(optimizer=tf.keras.optimizers.Adam(0.005), loss='mse')
 
             history = model.fit(X_train_tf, y_train_tf, epochs=200, batch_size=64,
                                 validation_split=0.2, verbose=0,
@@ -94,7 +94,7 @@ def nn_feature_search(X_train, X_test, Y_train, target_range=(50, 1250)):
 
     if champion['weights'] is not None:
         df_imp = pd.DataFrame({'Bacteria': X_train.columns, 'Score': champion['weights']})
-        elite_names = df_imp[df_imp['Score'] > 1e-5].sort_values('Score', ascending=False)['Bacteria'].tolist()
+        elite_names = df_imp[df_imp['Score'] > 1e-3].sort_values('Score', ascending=False)['Bacteria'].tolist()
         return NNResult(X_train[elite_names], X_test[elite_names], elite_names, champion['rmse'], champion['n_features'])
     return None
 
