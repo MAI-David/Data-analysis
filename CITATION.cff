@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+type: software
+title: "Data Analysis Pipeline for Microbial Community Profiling"
+abstract: "A comprehensive data analysis pipeline for processing and analyzing MetaPhlAn 4 microbial abundance data, including machine learning models for age prediction from gut microbiome composition."
+authors:
+  - family-names: "MAI-David"
+    affiliation: "Not specified"
+repository-code: "https://github.com/MAI-David/Data-analysis"
+keywords:
+  - microbiome
+  - metagenomics
+  - MetaPhlAn
+  - machine learning
+  - data analysis
+  - age prediction
+  - taxonomic profiling
+license: MIT
+version: "1.0.0"
+date-released: 2026-01-19
+references:
+  - type: article
+    title: "The LuCKi Living Lab - An Innovative Epidemiological Approach to Study the Gut Microbiome Over the Lifespan"
+    authors:
+      - family-names: "Lucki Cohort Study Group"
+    year: 2015
+    journal: "BMC Public Health"
+    doi: "10.1186/s12889-015-2255-7"
+    notes: "Original cohort study providing the data analyzed in this pipeline"

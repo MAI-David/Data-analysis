@@ -1,3 +1,19 @@
+"""
+Data Analysis Pipeline for Microbial Community Profiling
+
+This module provides a comprehensive suite of functions for analyzing MetaPhlAn 4
+microbial abundance data, including:
+- Neural network-based feature selection
+- Multiple machine learning model benchmarking (XGBoost, Random Forest, etc.)
+- Model interpretability (LIME, SHAP)
+- Feature engineering and taxonomic filtering
+- Visualization utilities
+
+Author: MAI-David
+License: MIT
+Version: 1.0.0
+"""
+
 import pandas as pd
 import numpy as np
 import time
@@ -6,6 +22,7 @@ import random
 import os
 import gc
 from collections import namedtuple
+from typing import Dict, List, Optional, Tuple, Union
 
 # Machine Learning & Stats
 import xgboost as xgb
@@ -61,7 +78,32 @@ else:
     print("No GPU found. Running on CPU mode.")
 
 
-def set_global_seeds(seed=42):
+def set_global_seeds(seed: int = 42) -> None:
+    """
+    Set random seeds for all libraries to ensure reproducibility.
+    
+    This function sets seeds for Python's random module, NumPy, and TensorFlow
+    to ensure that results are reproducible across runs.
+    
+    Parameters
+    ----------
+    seed : int, optional
+        Random seed value (default: 42)
+        
+    Returns
+    -------
+    None
+    
+    Examples
+    --------
+    >>> set_global_seeds(42)
+    Global seeds set to 42
+    
+    Notes
+    -----
+    This should be called before any random operations or model training
+    to ensure full reproducibility.
+    """
     os.environ['PYTHONHASHSEED'] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
@@ -73,7 +115,40 @@ def set_global_seeds(seed=42):
 # 2. NEURAL NETWORK SELECTOR (Robust Version)
 # =========================================================
 class GatekeeperLayer(layers.Layer):
-    def __init__(self, num_features, l1_penalty=0.01, **kwargs):
+    """
+    Custom Keras layer for feature selection via learnable gating mechanism.
+    
+    This layer applies element-wise multiplication with learnable weights
+    constrained to be non-negative, effectively acting as a soft feature
+    selector. L1 regularization encourages sparsity in the gate weights.
+    
+    Parameters
+    ----------
+    num_features : int
+        Number of input features
+    l1_penalty : float, optional
+        L1 regularization strength for gate weights (default: 0.01)
+    **kwargs
+        Additional keyword arguments passed to Layer
+        
+    Attributes
+    ----------
+    w : tf.Variable
+        Learnable gate weights of shape (num_features,)
+        
+    Examples
+    --------
+    >>> gate = GatekeeperLayer(num_features=100, l1_penalty=0.01)
+    >>> # Use in a model:
+    >>> inputs = layers.Input(shape=(100,))
+    >>> gated = gate(inputs)
+    
+    Notes
+    -----
+    The gate weights are initialized to 1.0 and constrained to be >= 0.
+    After training, features with weights close to 0 are effectively removed.
+    """
+    def __init__(self, num_features: int, l1_penalty: float = 0.01, **kwargs):
         super(GatekeeperLayer, self).__init__(**kwargs)
         self.num_features = num_features
         self.l1_penalty = float(l1_penalty)  # Cast early to avoid tensor issues
@@ -93,7 +168,69 @@ class GatekeeperLayer(layers.Layer):
         return inputs * self.w
 
 
-def nn_feature_search(X_train, X_test, Y_train, target_range=(50, 1250), consensus_threshold=0.7, use_checkpointing=True):
+def nn_feature_search(
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
+    Y_train: pd.Series,
+    target_range: Tuple[int, int] = (50, 1250),
+    consensus_threshold: float = 0.7,
+    use_checkpointing: bool = True
+) -> Optional[NNResult]:
+    """
+    Neural network-based feature selection using stability selection.
+    
+    Trains multiple neural networks with different L1 penalties to identify
+    stable, important features through consensus across multiple runs.
+    
+    Parameters
+    ----------
+    X_train : pd.DataFrame
+        Training features with shape (n_samples, n_features)
+    X_test : pd.DataFrame
+        Test features with shape (n_test_samples, n_features)
+    Y_train : pd.Series
+        Training target values
+    target_range : tuple of int, optional
+        (min, max) number of features to select (default: (50, 1250))
+    consensus_threshold : float, optional
+        Minimum selection frequency (0-1) for feature inclusion (default: 0.7)
+        Features selected in >=70% of runs are kept
+    use_checkpointing : bool, optional
+        Save model checkpoints during training (default: True)
+        
+    Returns
+    -------
+    NNResult or None
+        Named tuple containing:
+        - X_train_elite: Training data with selected features
+        - X_test_elite: Test data with selected features
+        - feature_names: List of selected feature names
+        - rmse: Root mean squared error on training data
+        - n_features: Number of selected features
+        Returns None if no penalty meets target range
+        
+    Examples
+    --------
+    >>> result = nn_feature_search(X_train, X_test, y_train,
+    ...                            target_range=(100, 500),
+    ...                            consensus_threshold=0.8)
+    >>> if result:
+    ...     print(f"Selected {result.n_features} features")
+    ...     print(f"RMSE: {result.rmse:.2f}")
+    
+    Notes
+    -----
+    - Uses GatekeeperLayer for soft feature selection
+    - Trains 10 models per penalty level with different random initializations
+    - L1 penalties tested: [2.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0, 12.0, 15.0]
+    - Selects penalty maximizing efficiency = R² / log(n_features + 1)
+    - Checkpoints saved to /tmp/nn_checkpoints/ if enabled
+    
+    References
+    ----------
+    .. [1] Meinshausen, N., & Bühlmann, P. (2010). Stability selection.
+           Journal of the Royal Statistical Society, 72(4), 417-473.
+    """
     scaler_x = StandardScaler()
     X_train_tf = scaler_x.fit_transform(X_train).astype('float32')
     y_train_tf = Y_train.values.astype('float32')
