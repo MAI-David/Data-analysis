@@ -55,10 +55,10 @@ jupyter notebook data-pipeline.ipynb
 ```
 
 The notebook is organized into the following sections:
-1. **Housekeeping**: Library imports and settings
-2. **Data Preprocessing**: Merging, encoding, and cleaning data
+1. **Housekeeping**: Library imports, settings, and function definitions
+2. **Data Preprocessing**: Data import, merging, encoding, and cleaning
 3. **Exploratory Data Analysis**: Visualizations and statistical summaries
-4. **Model Training**: Machine learning model development
+4. **Model Training**: Random Forest regressor development with genus-level features
 
 ## Data
 
@@ -68,10 +68,22 @@ The analysis uses two main data sources located in `data/raw/`:
   - Contains taxonomic profiles with relative abundances for each sample
   - Each row represents a taxonomic clade
   - Columns are prefixed with `mpa411_` for sample identifiers
+  - **Note**: Data was manually converted from TSV to CSV format for proper Pandas loading
 
 - **MAI3004_lucki_metadata_safe.csv**: Sample metadata (930 × 6)
   - Contains demographic and sample information
   - Includes family ID, sex, age group, and collection details
+
+### Dataset Characteristics
+
+The LucKi cohort dataset consists of **930 stool samples** collected from multiple individuals across different families. Key characteristics include:
+
+- **High-dimensional data**: Approximately 6,900 microbiome features
+- **Sparse dataset**: Each sample contains on average ~300 detected taxa
+- **Consistent sequencing depth**: Total microbial abundance per sample is relatively stable
+- **Rare taxa dominance**: Most taxa occur in only a small fraction of samples
+- **Prevalent taxa subset**: A small subset of taxa is highly prevalent across the cohort
+- **Log-normal distribution**: Non-zero abundances follow an approximately log-normal shape (typical for microbiome sequencing data)
 
 For more information about the MetaPhlAn data format, see `data/raw/metaphlan411_data_description.md`.
 
@@ -159,18 +171,22 @@ The following table describes important variables and data structures used throu
 
 The data pipeline follows these main steps:
 
-1. **Data Loading**: Import raw abundance data and metadata
+1. **Data Loading**: Import raw abundance data and metadata (manually converted from TSV to CSV format)
 2. **Data Merging**: Combine abundance profiles with sample metadata
 3. **Preprocessing**:
    - Label encoding for categorical variables (family_id, sex, age_group)
    - Handle missing values
    - Detect and analyze outliers using IQR method
-   - Check normality assumptions
+   - Check normality assumptions with Shapiro-Wilk tests
 4. **Train-Test Split**: Separate data before further processing
 5. **Normalization**: Apply log transformation to abundance data
-6. **Exploratory Analysis**:
-   - Analyze sample distributions
-   - Examine bacterial abundance patterns
+6. **Exploratory Data Analysis**:
+   - Analyze sample distributions and shapes
+   - Examine bacterial abundance patterns and prevalence
    - Perform PCA for dimensionality reduction
-7. **Feature Selection**: Filter features at specific taxonomic levels (e.g., genus)
-8. **Model Training**: Train Random Forest models with hyperparameter tuning
+   - **Key Finding**: PCA projection shows a gradual age-related gradient, indicating age-related variation in microbiome composition represents a limited fraction of total variance
+7. **Feature Selection**: Filter features at the genus level for model training
+8. **Model Training**: 
+   - Train Random Forest regressor models
+   - Base model evaluation with train/test split
+   - Hyperparameter tuning to find optimal model configuration
