@@ -56,9 +56,38 @@ jobs:
         cd notebooks
         jupyter nbconvert --to pdf data-pipeline.ipynb
         
-    - name: Commit and push changes
+    - name: Generate release tag and rename outputs
+      id: generate_tag
       run: |
-        git config --local user.email "github-actions[bot]@users.noreply.github.com"
-        git config --local user.name "github-actions[bot]"
-        git add notebooks/data-pipeline.ipynb notebooks/data-pipeline.html notebooks/data-pipeline.pdf
-        git diff --quiet && git diff --staged --quiet || (git commit -m "Update notebook outputs [skip ci]" && git push)
+        TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+        echo "tag=notebook-output-${TIMESTAMP}" >> $GITHUB_OUTPUT
+        echo "release_name=Notebook Output ${TIMESTAMP}" >> $GITHUB_OUTPUT
+        echo "timestamp=${TIMESTAMP}" >> $GITHUB_OUTPUT
+        
+        # Rename output files with timestamp
+        cd notebooks
+        mv data-pipeline.ipynb data-pipeline-${TIMESTAMP}.ipynb
+        mv data-pipeline.html data-pipeline-${TIMESTAMP}.html
+        mv data-pipeline.pdf data-pipeline-${TIMESTAMP}.pdf
+        
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ steps.generate_tag.outputs.tag }}
+        name: ${{ steps.generate_tag.outputs.release_name }}
+        body: |
+          Automated notebook execution and output generation.
+          
+          **Files included:**
+          - `data-pipeline-${{ steps.generate_tag.outputs.timestamp }}.ipynb` - Executed notebook with output cells
+          - `data-pipeline-${{ steps.generate_tag.outputs.timestamp }}.html` - HTML export
+          - `data-pipeline-${{ steps.generate_tag.outputs.timestamp }}.pdf` - PDF export
+          
+          **Triggered by:** ${{ github.event_name }}
+          **Commit:** ${{ github.sha }}
+        files: |
+          notebooks/data-pipeline-${{ steps.generate_tag.outputs.timestamp }}.ipynb
+          notebooks/data-pipeline-${{ steps.generate_tag.outputs.timestamp }}.html
+          notebooks/data-pipeline-${{ steps.generate_tag.outputs.timestamp }}.pdf
+        draft: false
+        prerelease: false
