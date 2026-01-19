@@ -97,7 +97,6 @@ def set_global_seeds(seed: int = 42) -> None:
     Examples
     --------
     >>> set_global_seeds(42)
-    Global seeds set to 42
     
     Notes
     -----

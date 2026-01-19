@@ -35,6 +35,29 @@ try:
     X_train = pd.read_csv('../data/processed/X_train_selected.csv')
     X_test = pd.read_csv('../data/processed/X_test_selected.csv')
     print(f"   Loaded selected features: {X_train.shape[1]} features")
+    
+    # When using pre-split data, we need to load and split the target the same way
+    # Load full data and perform the same split to get corresponding targets
+    data = pd.read_csv('../data/processed/merged_samples.csv')
+    y_full = data['age_group_at_sample']
+    
+    # Encode if needed
+    if y_full.dtype == 'object':
+        le = LabelEncoder()
+        y_full_encoded = pd.Series(le.fit_transform(y_full))
+    else:
+        y_full_encoded = y_full
+    
+    # Recreate the same train/test split used in feature selection
+    # (80/20 split with random_state=42, stratified)
+    _, _, y_train, y_test = train_test_split(
+        data.drop(columns=['age_group_at_sample']),  # X placeholder
+        y_full_encoded,
+        test_size=0.2,
+        random_state=42,
+        stratify=y_full_encoded
+    )
+    
 except FileNotFoundError:
     # Option B: Use all features
     print("   Selected features not found, loading full dataset...")
@@ -43,23 +66,15 @@ except FileNotFoundError:
     feature_cols = [col for col in data.columns if col not in metadata_cols]
     X = data[feature_cols]
     y = data['age_group_at_sample']
+    
+    # Encode if needed
+    if y.dtype == 'object':
+        le = LabelEncoder()
+        y = pd.Series(le.fit_transform(y))
+    
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=42, stratify=y
     )
-
-# Load target values
-data = pd.read_csv('../data/processed/merged_samples.csv')
-y = data['age_group_at_sample']
-
-# Encode if needed
-if y.dtype == 'object':
-    le = LabelEncoder()
-    y_encoded = le.fit_transform(y)
-    y_train = pd.Series(y_encoded[:len(X_train)])
-    y_test = pd.Series(y_encoded[len(X_train):])
-else:
-    y_train = y.iloc[:len(X_train)]
-    y_test = y.iloc[len(X_train):]
 
 print(f"   Train samples: {len(X_train)}, Test samples: {len(X_test)}")
 
