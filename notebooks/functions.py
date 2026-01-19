@@ -432,7 +432,54 @@ def xgboost_benchmark(
     return ModelResult(best_model, rmse, r2, search_xgb.best_params_, elapsed, top_drivers)
 
 
-def random_forest_benchmark(X_train_df, X_test_df, y_train, y_test, label="Dataset"):
+def random_forest_benchmark(
+    X_train_df: pd.DataFrame,
+    X_test_df: pd.DataFrame,
+    y_train: Union[pd.Series, np.ndarray],
+    y_test: Union[pd.Series, np.ndarray],
+    label: str = "Dataset"
+) -> ModelResult:
+    """
+    Train and evaluate Random Forest model with hyperparameter tuning.
+    
+    Performs randomized search over hyperparameter space and returns
+    the best model with performance metrics and feature importances.
+    
+    Parameters
+    ----------
+    X_train_df : pd.DataFrame
+        Training features
+    X_test_df : pd.DataFrame
+        Test features
+    y_train : pd.Series or np.ndarray
+        Training target values
+    y_test : pd.Series or np.ndarray
+        Test target values
+    label : str, optional
+        Dataset identifier for logging (default: "Dataset")
+        
+    Returns
+    -------
+    ModelResult
+        Named tuple containing:
+        - model: Trained Random Forest model
+        - rmse: Root mean squared error on test set
+        - r2: R² score on test set
+        - best_params: Dictionary of best hyperparameters
+        - runtime: Training time in seconds
+        - top_features: DataFrame with top 20 features by importance
+        
+    Examples
+    --------
+    >>> result = random_forest_benchmark(X_train, X_test, y_train, y_test)
+    >>> print(f"R²: {result.r2:.3f}")
+    
+    Notes
+    -----
+    - Hyperparameter search uses 5-fold cross-validation
+    - 20 random combinations tested
+    - Uses all available CPU cores (n_jobs=-1)
+    """
     print(f"Initializing Random Forest Engine: {label}")
     search = RandomizedSearchCV(
         estimator=RandomForestRegressor(random_state=42, n_jobs=-1),
@@ -459,7 +506,53 @@ def random_forest_benchmark(X_train_df, X_test_df, y_train, y_test, label="Datas
     return ModelResult(best_model, rmse, r2, search.best_params_, elapsed, top_drivers)
 
 
-def adaboost_benchmark(X_train_df, X_test_df, y_train, y_test, label="Dataset"):
+def adaboost_benchmark(
+    X_train_df: pd.DataFrame,
+    X_test_df: pd.DataFrame,
+    y_train: Union[pd.Series, np.ndarray],
+    y_test: Union[pd.Series, np.ndarray],
+    label: str = "Dataset"
+) -> ModelResult:
+    """
+    Train and evaluate AdaBoost model with hyperparameter tuning.
+    
+    Performs randomized search over hyperparameter space and returns
+    the best model with performance metrics and feature importances.
+    
+    Parameters
+    ----------
+    X_train_df : pd.DataFrame
+        Training features
+    X_test_df : pd.DataFrame
+        Test features
+    y_train : pd.Series or np.ndarray
+        Training target values
+    y_test : pd.Series or np.ndarray
+        Test target values
+    label : str, optional
+        Dataset identifier for logging (default: "Dataset")
+        
+    Returns
+    -------
+    ModelResult
+        Named tuple containing:
+        - model: Trained AdaBoost model
+        - rmse: Root mean squared error on test set
+        - r2: R² score on test set
+        - best_params: Dictionary of best hyperparameters
+        - runtime: Training time in seconds
+        - top_features: DataFrame with top 20 features by importance
+        
+    Examples
+    --------
+    >>> result = adaboost_benchmark(X_train, X_test, y_train, y_test)
+    >>> print(f"R²: {result.r2:.3f}")
+    
+    Notes
+    -----
+    - Hyperparameter search uses 5-fold cross-validation
+    - 15 random combinations tested
+    """
     print(f"Initializing AdaBoost Engine: {label}")
     search = RandomizedSearchCV(
         estimator=AdaBoostRegressor(random_state=42),
@@ -488,7 +581,53 @@ def adaboost_benchmark(X_train_df, X_test_df, y_train, y_test, label="Dataset"):
     return ModelResult(best_model, rmse, r2, search.best_params_, elapsed, top_drivers)
 
 
-def gradient_boosting_benchmark(X_train_df, X_test_df, y_train, y_test, label="Dataset"):
+def gradient_boosting_benchmark(
+    X_train_df: pd.DataFrame,
+    X_test_df: pd.DataFrame,
+    y_train: Union[pd.Series, np.ndarray],
+    y_test: Union[pd.Series, np.ndarray],
+    label: str = "Dataset"
+) -> ModelResult:
+    """
+    Train and evaluate Gradient Boosting model with hyperparameter tuning.
+    
+    Performs randomized search over hyperparameter space and returns
+    the best model with performance metrics and feature importances.
+    
+    Parameters
+    ----------
+    X_train_df : pd.DataFrame
+        Training features
+    X_test_df : pd.DataFrame
+        Test features
+    y_train : pd.Series or np.ndarray
+        Training target values
+    y_test : pd.Series or np.ndarray
+        Test target values
+    label : str, optional
+        Dataset identifier for logging (default: "Dataset")
+        
+    Returns
+    -------
+    ModelResult
+        Named tuple containing:
+        - model: Trained Gradient Boosting model
+        - rmse: Root mean squared error on test set
+        - r2: R² score on test set
+        - best_params: Dictionary of best hyperparameters
+        - runtime: Training time in seconds
+        - top_features: DataFrame with top 20 features by importance
+        
+    Examples
+    --------
+    >>> result = gradient_boosting_benchmark(X_train, X_test, y_train, y_test)
+    >>> print(f"R²: {result.r2:.3f}")
+    
+    Notes
+    -----
+    - Hyperparameter search uses 5-fold cross-validation
+    - 20 random combinations tested
+    """
     print(f"Initializing Gradient Boosting Engine: {label}")
     search = RandomizedSearchCV(
         estimator=GradientBoostingRegressor(random_state=42),
@@ -521,7 +660,55 @@ def gradient_boosting_benchmark(X_train_df, X_test_df, y_train, y_test, label="D
     return ModelResult(best_model, rmse, r2, search.best_params_, elapsed, top_drivers)
 
 
-def lightgbm_benchmark(X_train_df, X_test_df, y_train, y_test, label="Dataset"):
+def lightgbm_benchmark(
+    X_train_df: pd.DataFrame,
+    X_test_df: pd.DataFrame,
+    y_train: Union[pd.Series, np.ndarray],
+    y_test: Union[pd.Series, np.ndarray],
+    label: str = "Dataset"
+) -> ModelResult:
+    """
+    Train and evaluate LightGBM model with hyperparameter tuning.
+    
+    Performs randomized search over hyperparameter space and returns
+    the best model with performance metrics and feature importances.
+    
+    Parameters
+    ----------
+    X_train_df : pd.DataFrame
+        Training features
+    X_test_df : pd.DataFrame
+        Test features
+    y_train : pd.Series or np.ndarray
+        Training target values
+    y_test : pd.Series or np.ndarray
+        Test target values
+    label : str, optional
+        Dataset identifier for logging (default: "Dataset")
+        
+    Returns
+    -------
+    ModelResult
+        Named tuple containing:
+        - model: Trained LightGBM model
+        - rmse: Root mean squared error on test set
+        - r2: R² score on test set
+        - best_params: Dictionary of best hyperparameters
+        - runtime: Training time in seconds
+        - top_features: DataFrame with top 20 features by importance
+        
+    Examples
+    --------
+    >>> result = lightgbm_benchmark(X_train, X_test, y_train, y_test)
+    >>> print(f"R²: {result.r2:.3f}")
+    
+    Notes
+    -----
+    - Hyperparameter search uses 5-fold cross-validation
+    - 20 random combinations tested
+    - Verbose output suppressed (verbose=-1)
+    - Uses all available CPU cores (n_jobs=-1)
+    """
     print(f"Initializing LightGBM Engine: {label}")
     search = RandomizedSearchCV(
         estimator=lgb.LGBMRegressor(random_state=42, n_jobs=-1, verbose=-1),
