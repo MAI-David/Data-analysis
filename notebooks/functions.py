@@ -349,7 +349,57 @@ def nn_feature_search(
 # =========================================================
 # 3. CLASSICAL ML BENCHMARKS (XGB & RF)
 # =========================================================
-def xgboost_benchmark(X_train_df, X_test_df, y_train, y_test, label="Dataset"):
+def xgboost_benchmark(
+    X_train_df: pd.DataFrame,
+    X_test_df: pd.DataFrame,
+    y_train: Union[pd.Series, np.ndarray],
+    y_test: Union[pd.Series, np.ndarray],
+    label: str = "Dataset"
+) -> ModelResult:
+    """
+    Train and evaluate XGBoost model with hyperparameter tuning.
+    
+    Performs randomized search over hyperparameter space and returns
+    the best model with performance metrics and feature importances.
+    
+    Parameters
+    ----------
+    X_train_df : pd.DataFrame
+        Training features
+    X_test_df : pd.DataFrame
+        Test features
+    y_train : pd.Series or np.ndarray
+        Training target values
+    y_test : pd.Series or np.ndarray
+        Test target values
+    label : str, optional
+        Dataset identifier for logging (default: "Dataset")
+        
+    Returns
+    -------
+    ModelResult
+        Named tuple containing:
+        - model: Trained XGBoost model
+        - rmse: Root mean squared error on test set
+        - r2: R² score on test set
+        - best_params: Dictionary of best hyperparameters
+        - runtime: Training time in seconds
+        - top_features: DataFrame with top 20 features by importance
+        
+    Examples
+    --------
+    >>> result = xgboost_benchmark(X_train, X_test, y_train, y_test,
+    ...                            label="Full Dataset")
+    >>> print(f"R²: {result.r2:.3f}, RMSE: {result.rmse:.2f}")
+    >>> print(result.top_features.head())
+    
+    Notes
+    -----
+    - Hyperparameter search uses 5-fold cross-validation
+    - 15 random combinations tested
+    - Column names sanitized (non-alphanumeric removed) for XGBoost compatibility
+    - Uses all available CPU cores (n_jobs=-1)
+    """
     print(f"Initializing XGBoost Engine: {label}")
     X_train_clean = X_train_df.copy()
     X_test_clean = X_test_df.copy()
@@ -594,20 +644,64 @@ def final_battle(datasets_dict, y_train, n_splits=5, n_repeats=5, xgb_params=Non
 # =========================================================
 # 5. MODEL INTERPRETABILITY (LIME & SHAP)
 # =========================================================
-def explain_with_lime(model, X_train, X_test, feature_names, num_samples=5, num_features=10):
+def explain_with_lime(
+    model,
+    X_train: Union[pd.DataFrame, np.ndarray],
+    X_test: Union[pd.DataFrame, np.ndarray],
+    feature_names: List[str],
+    num_samples: int = 5,
+    num_features: int = 10
+) -> Dict[str, Dict]:
     """
     Generate LIME explanations for individual predictions.
     
-    Parameters:
-    - model: trained model with predict method
-    - X_train: training data (pandas DataFrame or numpy array)
-    - X_test: test data (pandas DataFrame or numpy array)
-    - feature_names: list of feature names
-    - num_samples: number of test samples to explain
-    - num_features: number of top features to show in explanation
+    Uses Local Interpretable Model-agnostic Explanations (LIME) to explain
+    model predictions by approximating the model locally with interpretable models.
     
-    Returns:
-    - Dictionary with explanations for each sample
+    Parameters
+    ----------
+    model : object
+        Trained model with predict method
+    X_train : pd.DataFrame or np.ndarray
+        Training data used as background for explanations
+    X_test : pd.DataFrame or np.ndarray
+        Test samples to explain
+    feature_names : list of str
+        Names of features for explanation display
+    num_samples : int, optional
+        Number of test samples to explain (default: 5)
+    num_features : int, optional
+        Number of top features to show in each explanation (default: 10)
+        
+    Returns
+    -------
+    dict
+        Dictionary with keys 'sample_0', 'sample_1', etc., each containing:
+        - 'prediction': Model prediction for the sample
+        - 'explanation': List of (feature, weight) tuples
+        - 'score': R² of the local linear approximation
+        
+    Examples
+    --------
+    >>> explanations = explain_with_lime(model, X_train, X_test[:5],
+    ...                                  feature_names=X_train.columns,
+    ...                                  num_samples=3, num_features=10)
+    >>> for sample_id, exp in explanations.items():
+    ...     print(f"{sample_id}: Prediction = {exp['prediction']:.2f}")
+    ...     print(f"Top features: {exp['explanation'][:3]}")
+    
+    Notes
+    -----
+    - LIME generates explanations by perturbing input features
+    - Each explanation is local to the specific sample
+    - Higher absolute weights indicate more important features
+    - Score indicates how well the linear model approximates the prediction
+    
+    References
+    ----------
+    .. [1] Ribeiro, M. T., Singh, S., & Guestrin, C. (2016). "Why should
+           I trust you?" Explaining the predictions of any classifier.
+           KDD 2016.
     """
     # Convert to numpy if needed
     X_train_np = X_train.values if hasattr(X_train, 'values') else X_train
@@ -694,11 +788,37 @@ def explain_with_shap(model, X_train, X_test, feature_names, background_samples=
 # =========================================================
 # 6. FEATURE CUTOFF CROSS-VALIDATION
 # =========================================================
-def get_taxonomic_level(feature_name):
+def get_taxonomic_level(feature_name: str) -> str:
     """
     Extract taxonomic level from MetaPhlAn feature name.
     
-    Taxonomic levels:
+    Parses MetaPhlAn 4 taxonomic notation to determine the deepest
+    (most specific) taxonomic level present in a feature name.
+    
+    Parameters
+    ----------
+    feature_name : str
+        Feature name with MetaPhlAn taxonomic notation
+        (e.g., "k__Bacteria|p__Firmicutes|c__Clostridia")
+        
+    Returns
+    -------
+    str
+        Taxonomic level name: 'Kingdom', 'Phylum', 'Class', 'Order',
+        'Family', 'Genus', 'Species', 'SGB', or 'Unknown'
+        
+    Examples
+    --------
+    >>> get_taxonomic_level("k__Bacteria|p__Firmicutes")
+    'Phylum'
+    >>> get_taxonomic_level("k__Bacteria|p__Firmicutes|c__Clostridia|o__Clostridiales|f__Ruminococcaceae|g__Faecalibacterium")
+    'Genus'
+    >>> get_taxonomic_level("k__Bacteria|p__Firmicutes|c__Clostridia|o__Clostridiales|f__Ruminococcaceae|g__Faecalibacterium|s__prausnitzii")
+    'Species'
+    
+    Notes
+    -----
+    MetaPhlAn 4 taxonomic prefixes:
     - k__ = Kingdom
     - p__ = Phylum
     - c__ = Class
@@ -708,7 +828,7 @@ def get_taxonomic_level(feature_name):
     - s__ = Species
     - t__ = Terminal (SGB - Species-Level Genome Bin)
     
-    Returns the deepest taxonomic level present in the feature name.
+    Returns 'Unknown' if no standard prefix is found.
     """
     level_order = ['k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__', 't__']
     level_names = ['Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Genus', 'Species', 'SGB']
