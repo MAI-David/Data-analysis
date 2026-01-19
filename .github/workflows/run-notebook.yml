@@ -1,0 +1,64 @@
+name: Run Jupyter Notebook
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'notebooks/data-pipeline.ipynb'
+      - 'notebooks/requirements.txt'
+      - 'notebooks/functions.py'
+      - 'data/**'
+      - '.github/workflows/run-notebook.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-notebook:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: 'notebooks/requirements.txt'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install jupyter nbconvert nbformat
+        pip install -r notebooks/requirements.txt
+        
+    - name: Install LaTeX for PDF conversion
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y texlive-xetex texlive-fonts-recommended texlive-plain-generic pandoc
+        
+    - name: Execute notebook
+      run: |
+        cd notebooks
+        jupyter nbconvert --to notebook --execute --inplace data-pipeline.ipynb
+        
+    - name: Convert to HTML
+      run: |
+        cd notebooks
+        jupyter nbconvert --to html data-pipeline.ipynb
+        
+    - name: Convert to PDF
+      run: |
+        cd notebooks
+        jupyter nbconvert --to pdf data-pipeline.ipynb
+        
+    - name: Commit and push changes
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add notebooks/data-pipeline.ipynb notebooks/data-pipeline.html notebooks/data-pipeline.pdf
+        git diff --quiet && git diff --staged --quiet || (git commit -m "Update notebook outputs [skip ci]" && git push)
